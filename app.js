@@ -3,7 +3,7 @@
 const SAVE_KEY = 'letter-rip:v1';
 const BEST_KEY = 'letter-rip:best';
 
-const COLS = 12;
+const COLS = 10;
 const ROWS = 20;
 const START_ROWS = 3;
 const MIN_WORD = 3;
@@ -84,7 +84,9 @@ function saveGame() {
 function loadGame() {
   try {
     const data = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if (!data || !Array.isArray(data.cols)) return null;
+    // Ignore saves from a different board size.
+    if (!data || !Array.isArray(data.cols) || data.cols.length !== COLS) return null;
+    if (data.cols.some((col) => col.length > ROWS)) return null;
     data.nextId = 0;
     data.cols = data.cols.map((col) => col.map((letter) => ({ id: data.nextId++, letter })));
     return data;
