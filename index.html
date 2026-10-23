@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Letter Rip!</title>
+  <meta name="description" content="Drag across letter tiles to spell words before the stack reaches the top.">
+  <meta name="theme-color" content="#14213d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Letter Rip!">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Title -->
+  <section id="startScreen" class="screen">
+    <header class="hero">
+      <h1 class="logo" aria-label="Letter Rip!">
+        <span class="logo-row">
+          <span style="--i: 0">L</span><span style="--i: 1">E</span><span style="--i: 2">T</span><span style="--i: 3">T</span><span style="--i: 4">E</span><span style="--i: 5">R</span>
+        </span>
+        <span class="logo-row">
+          <span style="--i: 6">R</span><span style="--i: 7">I</span><span style="--i: 8">P</span><span style="--i: 9">!</span>
+        </span>
+      </h1>
+      <p class="tagline">Spell fast. Don't let it stack up.</p>
+    </header>
+
+    <main>
+      <p id="bestLabel" class="best"></p>
+      <button id="resumeBtn" class="primary wide big" hidden disabled>Resume game</button>
+      <button id="startBtn" class="primary wide big" disabled>Loading words…</button>
+      <button id="howBtn" class="ghost wide">How to play</button>
+    </main>
+  </section>
+
+  <!-- Game -->
+  <section id="playScreen" class="screen play" hidden>
+    <header class="topbar">
+      <button id="pauseBtn" class="ghost icon" aria-label="Pause"><span class="pause-icon"></span></button>
+      <div class="stat"><span class="stat-label">Score</span><span id="score" class="stat-value">0</span></div>
+      <div class="stat"><span class="stat-label">Rows</span><span id="rows" class="stat-value">0</span></div>
+      <div class="stat"><span class="stat-label">Best</span><span id="best" class="stat-value">0</span></div>
+    </header>
+
+    <div class="word-bar">
+      <p id="word" class="word"></p>
+    </div>
+
+    <div class="timer" aria-hidden="true"><span id="timerBar"></span></div>
+
+    <div id="boardWrap" class="board-wrap">
+      <div id="board" class="board" role="application" aria-label="Letter board"></div>
+    </div>
+  </section>
+
+  <!-- Paused -->
+  <dialog id="pauseDialog" class="sheet">
+    <form method="dialog">
+      <p class="sheet-title">Paused</p>
+      <button value="resume" class="primary wide">Resume</button>
+      <button value="quit" class="ghost wide">End game</button>
+    </form>
+  </dialog>
+
+  <!-- Game over -->
+  <dialog id="overDialog" class="sheet">
+    <form method="dialog">
+      <p class="sheet-title">Game over</p>
+      <p id="finalScore" class="final-score"></p>
+      <p id="newBest" class="new-best" hidden>New best score!</p>
+      <dl class="summary">
+        <dt>Words</dt><dd id="sumWords"></dd>
+        <dt>Rows survived</dt><dd id="sumRows"></dd>
+        <dt>Best word</dt><dd id="sumBestWord"></dd>
+      </dl>
+      <button value="again" class="primary wide">Play again</button>
+      <button value="home" class="ghost wide">Home</button>
+    </form>
+  </dialog>
+
+  <!-- How to play -->
+  <dialog id="howDialog" class="sheet">
+    <form method="dialog">
+      <p class="sheet-title">How to play</p>
+      <div class="sheet-body">
+        <p><strong>Spell words.</strong> Touch a letter and drag through touching tiles (sideways, up, down or diagonally) to spell a word of three or more letters. Slide back to undo a letter. Let go to play it.</p>
+        <p><strong>Score.</strong> A real word scores the total of its tiles, with Scrabble values. The tiles disappear and the ones above drop down.</p>
+        <p><strong>Watch the stack.</strong> Every few seconds a new row of letters falls onto the pile, and rows come faster as you go. If a column is full when a new row arrives, the game is over.</p>
+      </div>
+      <button value="ok" class="primary wide">Got it</button>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
