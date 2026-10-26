@@ -3,8 +3,8 @@
 const SAVE_KEY = 'letter-rip:v1';
 const BEST_KEY = 'letter-rip:best';
 
-const COLS = 8;
-const ROWS = 15;
+const COLS = 6;
+const ROWS = 11;
 const START_ROWS = 3;
 const MIN_WORD = 3;
 
