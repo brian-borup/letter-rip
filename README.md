@@ -11,6 +11,7 @@ On an iPhone, open the app's link in Safari and tap **Share → Add to Home Scre
 - A real word scores the sum of its tiles' Scrabble values. Its tiles disappear and the tiles above them drop down.
 - A new row of letters falls onto the stack every 12 seconds at first, a quarter-second sooner after each row, down to every 5 seconds. If any column is full when a new row arrives, the game is over.
 - Letters are drawn like a Scrabble bag (98 tiles, no blanks). When the bag runs out it's refilled.
+- Sounds: each letter you pick plays a blip that climbs the scale, a real word plays a rising chime (longer for longer words), and a miss plays a "wah-wah". They're synthesized in the browser, so there are no audio files. Tap the speaker in the top right to turn them off. On an iPhone they follow the silent switch and don't stop music you're playing.
 
 ## Words
 

@@ -124,6 +124,11 @@ main { padding: 0 16px 24px; max-width: 560px; margin: 0 auto; display: grid; ga
 .topbar { display: flex; align-items: center; gap: 4px; padding: 8px 8px 0; }
 .topbar .icon { width: 48px; height: 44px; padding: 0; display: grid; place-items: center; }
 .pause-icon { width: 14px; height: 16px; border-left: 5px solid var(--muted); border-right: 5px solid var(--muted); }
+.sound-icon { width: 24px; height: 24px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sound-icon .speaker { fill: var(--muted); }
+.sound-icon .cross { display: none; }
+#soundBtn.off .waves { display: none; }
+#soundBtn.off .cross { display: inline; }
 .stat { flex: 1; display: grid; text-align: center; }
 .stat-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .stat-value { font-size: 1.35rem; font-weight: 800; font-variant-numeric: tabular-nums; }

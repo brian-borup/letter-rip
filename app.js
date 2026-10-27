@@ -2,6 +2,7 @@
 
 const SAVE_KEY = 'letter-rip:v1';
 const BEST_KEY = 'letter-rip:best';
+const MUTE_KEY = 'letter-rip:muted';
 
 const COLS = 6;
 const ROWS = 11;
@@ -35,6 +36,7 @@ const els = {
   howBtn: $('#howBtn'),
   howDialog: $('#howDialog'),
   pauseBtn: $('#pauseBtn'),
+  soundBtn: $('#soundBtn'),
   pauseDialog: $('#pauseDialog'),
   overDialog: $('#overDialog'),
   score: $('#score'),
@@ -97,6 +99,94 @@ function loadGame() {
 
 function clearSave() {
   try { localStorage.removeItem(SAVE_KEY); } catch { /* private mode */ }
+}
+
+// ---------- Sound ----------
+
+// All sounds are synthesized with Web Audio, so there are no files to load.
+// Phones only allow audio to start from a touch, so the context is created
+// (or woken) the first time a sound plays during one.
+let audio = null;
+let muted = false;
+try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch { /* private mode */ }
+
+// C major pentatonic, so any run of selected letters sounds like a tune.
+const NOTES = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760, 2093];
+
+function audioContext() {
+  if (muted) return null;
+  if (!audio) {
+    try {
+      // Mix with whatever music is playing and follow the iPhone's silent switch.
+      if (navigator.audioSession) navigator.audioSession.type = 'ambient';
+      audio = new (window.AudioContext || window.webkitAudioContext)();
+    } catch {
+      return null;
+    }
+  }
+  if (audio.state === 'suspended') audio.resume();
+  return audio;
+}
+
+// One note: a quick attack and a decay, optionally sliding to another pitch.
+function tone(ctx, freq, start, length, { type = 'sine', volume = 0.2, slideTo, filter } = {}) {
+  const t = ctx.currentTime + start;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t);
+  if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t + length);
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(volume, t + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + length);
+  let node = osc;
+  if (filter) {
+    const lowpass = ctx.createBiquadFilter();
+    lowpass.type = 'lowpass';
+    lowpass.frequency.value = filter;
+    osc.connect(lowpass);
+    node = lowpass;
+  }
+  node.connect(gain).connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + length + 0.02);
+}
+
+// A bubbly blip that climbs the scale as the word gets longer.
+function playSelect(count) {
+  const ctx = audioContext();
+  if (!ctx) return;
+  const freq = NOTES[Math.min(count - 1, NOTES.length - 1)];
+  tone(ctx, freq * 0.8, 0, 0.12, { type: 'triangle', volume: 0.22, slideTo: freq });
+}
+
+// A rising arpeggio with a sparkle on top; longer words get more notes.
+function playWord(length) {
+  const ctx = audioContext();
+  if (!ctx) return;
+  const steps = Math.min(3 + Math.max(0, length - 3), 7);
+  for (let i = 0; i < steps; i++) {
+    tone(ctx, NOTES[i + 2], i * 0.065, 0.22, { type: 'triangle', volume: 0.2 });
+  }
+  const top = NOTES[steps + 2] || NOTES[NOTES.length - 1];
+  tone(ctx, top, steps * 0.065, 0.5, { type: 'sine', volume: 0.18 });
+  tone(ctx, top * 2, steps * 0.065 + 0.04, 0.4, { type: 'sine', volume: 0.06 });
+}
+
+// A droopy two-note "wah-wah".
+function playMiss() {
+  const ctx = audioContext();
+  if (!ctx) return;
+  tone(ctx, 330, 0, 0.18, { type: 'square', volume: 0.12, slideTo: 294, filter: 1200 });
+  tone(ctx, 262, 0.2, 0.4, { type: 'square', volume: 0.12, slideTo: 175, filter: 900 });
+}
+
+function setMuted(value) {
+  muted = value;
+  try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch { /* private mode */ }
+  els.soundBtn.classList.toggle('off', muted);
+  els.soundBtn.setAttribute('aria-label', muted ? 'Turn sound on' : 'Turn sound off');
+  els.soundBtn.setAttribute('aria-pressed', String(!muted));
 }
 
 // ---------- Letters ----------
@@ -304,6 +394,7 @@ els.board.addEventListener('pointerdown', (e) => {
   e.preventDefault();
   els.board.setPointerCapture(e.pointerId);
   path = [tile];
+  playSelect(1);
   showPath();
 });
 
@@ -319,6 +410,7 @@ els.board.addEventListener('pointermove', (e) => {
   } else {
     return;
   }
+  playSelect(path.length);
   showPath();
 });
 
@@ -339,6 +431,7 @@ function finishDrag() {
 
   if (tiles.length < 2) { showWord(''); return; }
   if (!isWord(tiles)) {
+    playMiss();
     showWord(wordText(tiles), 'bad', tiles.length < MIN_WORD ? 'Too short' : 'Not a word');
     return;
   }
@@ -359,6 +452,7 @@ function finishDrag() {
   game.words++;
   if (!game.bestWord || points > game.bestWord.points) game.bestWord = { word, points };
   if (navigator.vibrate) navigator.vibrate(15);
+  playWord(tiles.length);
   showWord(word, 'good', `+${points}`);
   render();
   updateStats();
@@ -412,6 +506,11 @@ els.resumeBtn.addEventListener('click', () => {
 });
 els.howBtn.addEventListener('click', () => els.howDialog.showModal());
 els.pauseBtn.addEventListener('click', pause);
+els.soundBtn.addEventListener('click', () => {
+  setMuted(!muted);
+  playSelect(3); // a blip to confirm sound is back on
+});
+setMuted(muted);
 
 els.pauseDialog.addEventListener('close', () => {
   if (els.pauseDialog.returnValue === 'quit') {

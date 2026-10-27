@@ -1,5 +1,5 @@
 // Bump this version whenever app files change so phones pick up the update.
-const CACHE = 'letter-rip-v6';
+const CACHE = 'letter-rip-v7';
 const FILES = [
   './',
   'index.html',
