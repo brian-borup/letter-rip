@@ -3,6 +3,7 @@
 const SAVE_KEY = 'letter-rip:v1';
 const BEST_KEY = 'letter-rip:best';
 const MUTE_KEY = 'letter-rip:muted';
+const HINT_KEY = 'letter-rip:dropHintSeen';
 
 const COLS = 6;
 const ROWS = 11;
@@ -37,6 +38,7 @@ const els = {
   howDialog: $('#howDialog'),
   pauseBtn: $('#pauseBtn'),
   soundBtn: $('#soundBtn'),
+  dropHint: $('#dropHint'),
   pauseDialog: $('#pauseDialog'),
   overDialog: $('#overDialog'),
   score: $('#score'),
@@ -59,6 +61,8 @@ let running = false;    // false while paused, on the title screen or after game
 let size = 0;           // tile size in px
 let lastFrame = 0;
 let path = [];          // tiles being dragged through
+let pull = null;        // a tap or pull-down that started on empty board space
+let nextManualDrop = 0; // when the player may call down another row
 let wordTimer = 0;
 
 const tileEls = new Map(); // tile id -> element
@@ -181,6 +185,14 @@ function playMiss() {
   tone(ctx, 262, 0.2, 0.4, { type: 'square', volume: 0.12, slideTo: 175, filter: 900 });
 }
 
+// A soft thump for a row the player calls down early.
+function playDrop() {
+  const ctx = audioContext();
+  if (!ctx) return;
+  tone(ctx, 220, 0, 0.16, { type: 'triangle', volume: 0.25, slideTo: 80 });
+  tone(ctx, 900, 0, 0.08, { type: 'sine', volume: 0.05, slideTo: 300 });
+}
+
 function setMuted(value) {
   muted = value;
   try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch { /* private mode */ }
@@ -231,6 +243,8 @@ function startPlaying() {
   for (const el of tileEls.values()) el.remove();
   tileEls.clear();
   path = [];
+  pull = null;
+  showDropHint();
   els.startScreen.hidden = true;
   els.playScreen.hidden = false;
   els.best.textContent = Math.max(loadBest(), game.score);
@@ -279,6 +293,27 @@ function dropRow() {
   render();
   updateStats();
   saveGame();
+}
+
+// The player tapped or pulled down on empty space to bring the next row now
+// instead of waiting. A short cooldown stops one quick double-tap from
+// dropping two rows by accident.
+function manualDrop() {
+  const now = performance.now();
+  if (!running || now < nextManualDrop) return;
+  nextManualDrop = now + 350;
+  playDrop();
+  dropRow();
+  if (!els.dropHint.hidden) {
+    els.dropHint.hidden = true;
+    try { localStorage.setItem(HINT_KEY, '1'); } catch { /* private mode */ }
+  }
+}
+
+function showDropHint() {
+  let seen = false;
+  try { seen = localStorage.getItem(HINT_KEY) === '1'; } catch { /* private mode */ }
+  els.dropHint.hidden = seen;
 }
 
 function gameOver() {
@@ -387,18 +422,31 @@ function adjacent(a, b) {
 
 // ---------- Dragging ----------
 
+// Touching a tile starts a word. Touching empty space above the stack starts
+// a tap or pull-down that brings the next row in early.
 els.board.addEventListener('pointerdown', (e) => {
   if (!running) return;
   const tile = tileAt(e, false);
-  if (!tile) return;
   e.preventDefault();
   els.board.setPointerCapture(e.pointerId);
+  if (!tile) {
+    pull = { x: e.clientX, y: e.clientY, time: performance.now() };
+    return;
+  }
   path = [tile];
   playSelect(1);
   showPath();
 });
 
 els.board.addEventListener('pointermove', (e) => {
+  if (pull) {
+    // Pulling down most of a tile's height drops the row right away.
+    if (e.clientY - pull.y > size * 0.8) {
+      pull = null;
+      manualDrop();
+    }
+    return;
+  }
   if (!path.length) return;
   const tile = tileAt(e, true);
   const last = path[path.length - 1];
@@ -414,10 +462,20 @@ els.board.addEventListener('pointermove', (e) => {
   showPath();
 });
 
-els.board.addEventListener('pointerup', () => finishDrag());
+els.board.addEventListener('pointerup', (e) => {
+  if (pull) {
+    const moved = Math.hypot(e.clientX - pull.x, e.clientY - pull.y);
+    const quick = performance.now() - pull.time < 500;
+    pull = null;
+    if (moved < 12 && quick) manualDrop();
+    return;
+  }
+  finishDrag();
+});
 els.board.addEventListener('pointercancel', () => cancelDrag());
 
 function cancelDrag() {
+  pull = null;
   path = [];
   showPath();
   showWord('');

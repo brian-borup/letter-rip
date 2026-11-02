@@ -61,7 +61,9 @@
     <div class="timer" aria-hidden="true"><span id="timerBar"></span></div>
 
     <div id="boardWrap" class="board-wrap">
-      <div id="board" class="board" role="application" aria-label="Letter board"></div>
+      <div id="board" class="board" role="application" aria-label="Letter board">
+        <p id="dropHint" class="drop-hint" hidden>Tap or pull down<br>for the next row</p>
+      </div>
     </div>
   </section>
 
@@ -98,6 +100,7 @@
         <p><strong>Spell words.</strong> Touch a letter and drag through touching tiles (sideways, up, down or diagonally) to spell a word of three or more letters. Slide back to undo a letter. Let go to play it.</p>
         <p><strong>Score.</strong> A real word scores the total of its tiles, with Scrabble values. The tiles disappear and the ones above drop down.</p>
         <p><strong>Watch the stack.</strong> Every few seconds a new row of letters falls onto the pile, and rows come faster as you go. If a column is full when a new row arrives, the game is over.</p>
+        <p><strong>Ready for more?</strong> Tap or pull down on the empty space above the letters to bring the next row in right away.</p>
       </div>
       <button value="ok" class="primary wide">Got it</button>
     </form>
